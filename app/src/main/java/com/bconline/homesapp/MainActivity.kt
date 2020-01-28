@@ -12,6 +12,7 @@ import android.view.ContextThemeWrapper
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -82,6 +83,7 @@ class MainActivity : AppCompatActivity() {
     private val locationListener: LocationListener = object : LocationListener {
         override fun onLocationChanged(location: Location) {
             Log.d("MainActivity","gps=" + location.longitude + ":" + location.latitude)
+            Toast.makeText(this@MainActivity,"gps=" + location.longitude + ":" + location.latitude, Toast.LENGTH_SHORT).show()
         }
         override fun onStatusChanged(provider: String, status: Int, extras: Bundle) {}
         override fun onProviderEnabled(provider: String) {}
@@ -132,16 +134,19 @@ class MainActivity : AppCompatActivity() {
         @android.webkit.JavascriptInterface
         fun getMyPosition(): String{
             Log.d("JavascriptInterface", "getMyPosition ")
+            Toast.makeText(this@MainActivity,"getMyPosition ", Toast.LENGTH_SHORT).show()
             return "test"
         }
 
         @android.webkit.JavascriptInterface
         fun showToastMessage(message: String){
+            Toast.makeText(this@MainActivity,message, Toast.LENGTH_SHORT).show()
             Log.d("JavascriptInterface", "showToastMessage message="+message)
         }
 
         @android.webkit.JavascriptInterface
         fun shareKakao(url: String){
+            Toast.makeText(this@MainActivity,"shareKakao " + url, Toast.LENGTH_SHORT).show()
             Log.d("JavascriptInterface", "shareKakao url="+url)
         }
     }
