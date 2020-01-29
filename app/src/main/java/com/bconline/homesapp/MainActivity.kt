@@ -9,9 +9,7 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.view.ContextThemeWrapper
-import android.webkit.WebResourceRequest
-import android.webkit.WebView
-import android.webkit.WebViewClient
+import android.webkit.*
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat
@@ -121,6 +119,41 @@ class MainActivity : AppCompatActivity() {
                 val url : String  = (if (request != null) request.getUrl() else null).toString()
                 Log.d("MainActivity","shouldOverrideUrlLoading " + url)
                 view?.loadUrl((if (request != null) request.getUrl() else null).toString())
+                return true
+            }
+        }
+        webview.webChromeClient = object : WebChromeClient(){
+            override fun onJsAlert(
+                view: WebView?,
+                url: String?,
+                message: String?,
+                result: JsResult?
+            ): Boolean {
+                val builder = AlertDialog.Builder(ContextThemeWrapper(this@MainActivity, R.style.Theme_AppCompat_Light_Dialog))
+                builder.setMessage(message)
+                builder.setPositiveButton("확인") { _, _ ->
+                    result!!.cancel()
+                }
+                builder.show()
+                result!!.cancel()
+                return true
+            }
+
+            override fun onJsConfirm(
+                view: WebView?,
+                url: String?,
+                message: String?,
+                result: JsResult?
+            ): Boolean {
+                val builder = AlertDialog.Builder(ContextThemeWrapper(this@MainActivity, R.style.Theme_AppCompat_Light_Dialog))
+                builder.setMessage(message)
+                builder.setPositiveButton("확인") { _, _ ->
+                    result!!.confirm()
+                }
+                builder.setNegativeButton("취소") { _, _ ->
+                    result!!.cancel()
+                }
+                builder.show()
                 return true
             }
         }
