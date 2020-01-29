@@ -14,6 +14,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.bconline.homesapp.sharedSNS.KakaolinkProvider
 import kotlinx.android.synthetic.main.activity_main.*
 import java.util.jar.Manifest
 
@@ -185,7 +186,7 @@ class MainActivity : AppCompatActivity() {
         @android.webkit.JavascriptInterface
         fun shareKakao(url: String){
             Toast.makeText(this@MainActivity,"shareKakao " + url, Toast.LENGTH_SHORT).show()
-            Log.d("JavascriptInterface", "shareKakao url="+url)
+            KakaolinkProvider.sendKakaoLink(this@MainActivity,"https://homesapp.co.kr/uploads/photo/thumb/20/01/28/2019053113595111_18535_wt.jpg", "테스트", "테스트 메세지입니다.")
         }
     }
 
