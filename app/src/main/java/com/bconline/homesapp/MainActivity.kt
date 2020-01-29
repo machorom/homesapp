@@ -31,6 +31,9 @@ class MainActivity : AppCompatActivity() {
         locationPermissionCheck()
     }
 
+    private var lat: String? = null
+    private var lng: String? = null
+
     private fun locationPermissionCheck(){
         if( ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED){
             if (ActivityCompat.shouldShowRequestPermissionRationale(this,
@@ -82,8 +85,9 @@ class MainActivity : AppCompatActivity() {
 
     private val locationListener: LocationListener = object : LocationListener {
         override fun onLocationChanged(location: Location) {
+            lat = location.latitude.toString()
+            lng = location.longitude.toString()
             Log.d("MainActivity","gps=" + location.longitude + ":" + location.latitude)
-            Toast.makeText(this@MainActivity,"gps=" + location.longitude + ":" + location.latitude, Toast.LENGTH_SHORT).show()
         }
         override fun onStatusChanged(provider: String, status: Int, extras: Bundle) {}
         override fun onProviderEnabled(provider: String) {}
@@ -124,7 +128,7 @@ class MainActivity : AppCompatActivity() {
         setting.javaScriptEnabled = true
         webview.addJavascriptInterface(JavascriptInterface(),"HomesAppMobile")
 
-        val url:String = "https://homesapp.co.kr?app=android&versionName="+applicationContext.packageManager.getPackageInfo(packageName,0).versionName
+        val url:String = "https://homesapp.co.kr?app=android&version="+applicationContext.packageManager.getPackageInfo(packageName,0).versionName
         Log.d("MainActivity","loadUrl " + url)
         webview.loadUrl(url)
     }
@@ -134,8 +138,9 @@ class MainActivity : AppCompatActivity() {
         @android.webkit.JavascriptInterface
         fun getMyPosition(): String{
             Log.d("JavascriptInterface", "getMyPosition ")
-            Toast.makeText(this@MainActivity,"getMyPosition ", Toast.LENGTH_SHORT).show()
-            return "test"
+            var result: String = String.format("{\"lat\":%s,\"lng\":%s}",lat, lng)
+            //Toast.makeText(this@MainActivity,"getMyPosition result="+result, Toast.LENGTH_SHORT).show()
+            return result
         }
 
         @android.webkit.JavascriptInterface
