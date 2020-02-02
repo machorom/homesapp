@@ -17,7 +17,8 @@ object KakaolinkProvider {
     private const val KAKAO_BASE_LINK = "https://developers.kakao.com"
 
     // 공유하기 눌렀을 때 처리
-    fun sendKakaoLink(context: Context, imageUrl: String, title:String, content: String){
+    fun sendKakaoLink(context: Context, imageUrl: String, title:String, content: String, url: String){
+        Log.d("SNS","sendKakaoLink imageUrl=" + imageUrl+", title="+title+", content="+content)
         val params : FeedTemplate = FeedTemplate.newBuilder(ContentObject.newBuilder(title,imageUrl,
             LinkObject.newBuilder().setWebUrl("https://developers.kakao.com")
                 .setMobileWebUrl("https://developers.kakao.com").build()).setDescrption(content).build()).build()

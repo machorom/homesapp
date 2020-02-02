@@ -15,7 +15,7 @@ object LineLinkProvider {
             intent.data = Uri.parse(content)
             context.startActivity(intent)
         } else {
-            Toast.makeText(context,"라인앱이 설치되지 않았네요~", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context,"라인앱이 설치되지 않았습니다.", Toast.LENGTH_SHORT).show()
 //            val intent = Intent()
 //            intent.data = Uri.parse("market://details?id=jp.naver.line.android")
 //            intent.action = Intent.ACTION_VIEW

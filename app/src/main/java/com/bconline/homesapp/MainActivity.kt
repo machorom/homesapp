@@ -1,10 +1,13 @@
 package com.bconline.homesapp
 
+import android.app.Dialog
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
+import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
@@ -17,7 +20,14 @@ import androidx.core.content.ContextCompat
 import com.bconline.homesapp.sharedSNS.KakaolinkProvider
 import com.bconline.homesapp.sharedSNS.LineLinkProvider
 import kotlinx.android.synthetic.main.activity_main.*
-import java.util.jar.Manifest
+import android.webkit.WebSettings
+import android.net.Uri
+import android.os.Message
+import android.webkit.WebView
+import android.webkit.WebChromeClient
+
+
+
 
 class MainActivity : AppCompatActivity() {
 
@@ -96,12 +106,33 @@ class MainActivity : AppCompatActivity() {
 
     override fun onBackPressed() {
         Log.d("MainActivity","onBackPressed canGoBack=" + webview.canGoBack() + ", url="+webview.url)
-        if( webview.canGoBack() ){
-            webview.goBack()
-        } else {
+        if( isLastedPage() ){
             showExitDialog()
+        } else {
+            webview.goBack()
             //super.onBackPressed()
         }
+    }
+
+    private fun isLastedPage():Boolean{
+        if( webview.getUrl().endsWith("/login")
+            || webview.getUrl().endsWith("/join")
+            || webview.getUrl().endsWith("/map")
+            || webview.getUrl().endsWith("/contents")
+            || webview.getUrl().endsWith("/mlike")
+            || webview.getUrl().endsWith("/recent")
+            || webview.getUrl().endsWith("/clike")
+            || webview.getUrl().endsWith("/mypage")
+            || webview.getUrl().endsWith("/notice")
+            || webview.getUrl().endsWith("/event")
+            || webview.getUrl().endsWith("/faq")
+            || webview.getUrl().endsWith("/inquiry")
+            || webview.getUrl().endsWith("/member/edit")
+            || webview.getUrl().endsWith("/member/setting")
+            || !webview.canGoBack() ){
+            return true
+        }
+        return false
     }
 
     private fun showExitDialog(){
@@ -119,8 +150,17 @@ class MainActivity : AppCompatActivity() {
         webview.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
                 val url : String  = (if (request != null) request.getUrl() else null).toString()
+                if("sms".equals(url.substring(0,3))){
+                    val intent = Intent(Intent.ACTION_SENDTO, Uri.parse(url))
+                    startActivity(intent)
+                    return true
+                } else if("tel".equals(url.substring(0,3))){
+                    val intent = Intent(Intent.ACTION_DIAL, Uri.parse(url))
+                    startActivity(intent)
+                    return true
+                }
                 Log.d("MainActivity","shouldOverrideUrlLoading " + url)
-                view?.loadUrl((if (request != null) request.getUrl() else null).toString())
+                view?.loadUrl(url)
                 return true
             }
         }
@@ -158,9 +198,49 @@ class MainActivity : AppCompatActivity() {
                 builder.show()
                 return true
             }
+
+            override fun onCreateWindow(
+                view: WebView?,
+                isDialog: Boolean,
+                isUserGesture: Boolean,
+                resultMsg: Message?
+            ): Boolean {
+                val newWebView = WebView(this@MainActivity)
+                val settings = newWebView.settings
+                settings.javaScriptEnabled=true
+                val dialog = Dialog(this@MainActivity)
+                dialog.setContentView(newWebView)
+                dialog.show()
+                newWebView.webChromeClient = object: WebChromeClient(){
+                    override fun onCloseWindow(window: WebView?) {
+                        Log.i("WebSettings", "new webview onCloseWindow")
+                        dialog.dismiss()
+                    }
+                }
+                val wvt :WebView.WebViewTransport = resultMsg!!.obj as WebView.WebViewTransport
+                wvt.webView = newWebView
+                Log.i("WebSettings", "new webview attach")
+                resultMsg.sendToTarget()
+                return true
+            }
         }
         val setting = webview.settings
         setting.javaScriptEnabled = true
+        setting.javaScriptCanOpenWindowsAutomatically = true
+        if(Build.VERSION.SDK_INT > 21) {
+            setting.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+        } else {
+            try {
+                val m = WebSettings::class.java.getMethod(
+                    "setMixedContentMode",
+                    Int::class.javaPrimitiveType
+                )
+                m.invoke(setting, 2) // 2 = MIXED_CONTENT_COMPATIBILITY_MODE
+                Log.i("WebSettings", "Successfully set MIXED_CONTENT_COMPATIBILITY_MODE")
+            } catch (ex: Exception) {
+                Log.e("WebSettings", "Error calling setMixedContentMode: " + ex.message, ex)
+            }
+        }
         webview.addJavascriptInterface(JavascriptInterface(),"HomesAppMobile")
 
         val url:String = "https://homesapp.co.kr?app=android&version="+applicationContext.packageManager.getPackageInfo(packageName,0).versionName
@@ -174,7 +254,6 @@ class MainActivity : AppCompatActivity() {
         fun getMyPosition(): String{
             Log.d("JavascriptInterface", "getMyPosition ")
             var result: String = String.format("{\"lat\":%s,\"lng\":%s}",lat, lng)
-            //Toast.makeText(this@MainActivity,"getMyPosition result="+result, Toast.LENGTH_SHORT).show()
             return result
         }
 
@@ -185,9 +264,8 @@ class MainActivity : AppCompatActivity() {
         }
 
         @android.webkit.JavascriptInterface
-        fun shareKakao(url: String){
-            Toast.makeText(this@MainActivity,"shareKakao " + url, Toast.LENGTH_SHORT).show()
-            KakaolinkProvider.sendKakaoLink(this@MainActivity,"https://homesapp.co.kr/uploads/photo/thumb/20/01/28/2019053113595111_18535_wt.jpg", "테스트", "테스트 메세지입니다.")
+        fun shareKakao(url: String, imageUrl: String,title: String,content: String){
+            KakaolinkProvider.sendKakaoLink(this@MainActivity,imageUrl, title, content,url)
         }
 
         @android.webkit.JavascriptInterface
