@@ -1,9 +1,11 @@
 package com.bconline.homesapp
 
+import android.app.Activity
 import android.app.Dialog
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.database.Cursor
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
@@ -23,10 +25,23 @@ import kotlinx.android.synthetic.main.activity_main.*
 import android.webkit.WebSettings
 import android.net.Uri
 import android.os.Message
+import android.provider.DocumentsContract
+import android.provider.MediaStore
 import android.webkit.WebView
 import android.webkit.WebChromeClient
-
-
+import androidx.core.net.toFile
+import com.bconline.homesapp.remote.RetroCallback
+import com.bconline.homesapp.remote.UploadApi
+import com.bconline.homesapp.remote.RetrofitClient
+import okhttp3.MediaType
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
+import okhttp3.ResponseBody
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
+import retrofit2.Retrofit
+import java.io.File
 
 
 class MainActivity : AppCompatActivity() {
@@ -34,6 +49,11 @@ class MainActivity : AppCompatActivity() {
     private var locationManager : LocationManager? = null
     private val MY_PERMISSIONS_REQUEST_ACCESS_COARSE_LOCATION: Int = 100
     private val MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION: Int = 101
+    private val MY_PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE: Int = 102
+
+    private val REQUEST_PICK_MEMBER_CODE: Int = 1000
+    private val REQUEST_PICK_INQUERY_CODE: Int = 1001
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -61,6 +81,14 @@ class MainActivity : AppCompatActivity() {
                     arrayOf(android. Manifest.permission.ACCESS_FINE_LOCATION),
                     MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION)
             }
+        }else if( ContextCompat.checkSelfPermission(this, android.Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED){
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                    android.Manifest.permission.READ_EXTERNAL_STORAGE)) {
+            } else {
+                ActivityCompat.requestPermissions(this,
+                    arrayOf(android. Manifest.permission.READ_EXTERNAL_STORAGE),
+                    MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION)
+            }
         } else {
             initLocation()
         }
@@ -77,11 +105,108 @@ class MainActivity : AppCompatActivity() {
                 Log.d("MainActivity","onRequestPermissionsResult MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION")
                 locationPermissionCheck()
             }
+            MY_PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE ->{
+                Log.d("MainActivity","onRequestPermissionsResult MY_PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE")
+                locationPermissionCheck()
+            }
             else -> {
                 Log.d("MainActivity","onRequestPermissionsResult else")
             }
         }
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (resultCode == Activity.RESULT_OK && requestCode == REQUEST_PICK_MEMBER_CODE) {
+            Log.d("MainActivity", "data path=" + data?.data)
+            val contentURI = data!!.data
+            uploadMemberPhoto(contentURI)
+        } else if (resultCode == Activity.RESULT_OK && requestCode == REQUEST_PICK_INQUERY_CODE){
+            val contentURI = data!!.data
+            uploadInqueryPhoto(contentURI)
+        }
+        super.onActivityResult(requestCode, resultCode, data)
+    }
+
+    private fun getRealPath(contentURI: Uri?):String?{
+        val projection = arrayOf(MediaStore.Images.Media.DATA)
+        if(contentURI != null) {
+            val cursor: Cursor? = contentResolver.query(contentURI, projection, null, null, null)
+            try {
+                val columeIndex = cursor!!.getColumnIndexOrThrow(MediaStore.Images.Media.DATA)
+                if (cursor.moveToFirst()) {
+                    return cursor.getString(columeIndex)
+                }
+            } finally {
+                cursor!!.close()
+            }
+        }
+        return null
+    }
+
+    private fun uploadMemberPhoto(contentURI: Uri?){
+        val retrofit: Retrofit? = RetrofitClient.get(this)
+        val uploadApi:UploadApi = retrofit!!.create(UploadApi::class.java)
+
+        val filepath = getRealPath(contentURI)
+        val file = File(filepath)
+        Log.d("MainActivity","uploadMember filepath="+filepath+",filename="+file.name)
+        val requestBody: RequestBody = RequestBody.create(MediaType.parse("image/*"),file)
+        val part: MultipartBody.Part = MultipartBody.Part.createFormData("photo",file.name,requestBody)
+        val call = uploadApi.memberUpload(part)
+        call.enqueue(object : Callback<ResponseBody> {
+            override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
+                Log.i("MainActivity","memberUpload  error image" + t)
+            }
+            override fun onResponse(call: Call<ResponseBody>, response: Response<ResponseBody>) {
+                Log.i(
+                    "MainActivity",
+                    "memberUpload code=" + response.code()
+                            + ", errorBody=" + response.errorBody()
+                            + ", message=" + response.message()
+                            + ", raw=" + response.raw()
+                            + ", body=" + response.body()!!.string()
+                )
+                webView.loadUrl("javascript:memberUploadComplete("+response.body()!!.string()+")")
+            }
+
+        })
+    }
+
+    private fun uploadInqueryPhoto(contentURI: Uri?){
+        val retrofit: Retrofit? = RetrofitClient.get(this)
+        val uploadApi:UploadApi = retrofit!!.create(UploadApi::class.java)
+
+        val filepath = getRealPath(contentURI)
+        val file = File(filepath)
+        Log.d("MainActivity","filepath="+filepath+",filename="+file.name)
+        val requestBody: RequestBody = RequestBody.create(MediaType.parse("image/*"),file)
+        val part: MultipartBody.Part = MultipartBody.Part.createFormData("photo[]",file.name, requestBody)
+        val call = uploadApi.inqueryUpload(part)
+        call.enqueue(object : Callback<ResponseBody> {
+            override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
+                Log.i("MainActivity"," error image" + t)
+            }
+
+            override fun onResponse(call: Call<ResponseBody>, response: Response<ResponseBody>) {
+                Log.i("MainActivity","response raw=" + response.raw()+",body=" + response.body()!!.string())
+            }
+
+        })
+    }
+
+
+    private fun pickImageFromGallery(reqeustCode:Int){
+        val intent = Intent(Intent.ACTION_PICK)
+        intent.type = "image/*"
+        startActivityForResult(intent,reqeustCode)
+    }
+
+    private fun pickMultiImageFromGallery(reqeustCode:Int){
+        val intent = Intent(Intent.ACTION_GET_CONTENT, MediaStore.Audio.Media.EXTERNAL_CONTENT_URI)
+        intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE,true)
+        intent.type = "image/*"
+        startActivityForResult(Intent.createChooser(intent,"이미지선택"),reqeustCode)
     }
 
     private fun initLocation(){
@@ -272,6 +397,18 @@ class MainActivity : AppCompatActivity() {
         fun shareLine(url: String){
             Toast.makeText(this@MainActivity,"shareLine " + url, Toast.LENGTH_SHORT).show()
             LineLinkProvider.sendLink(this@MainActivity,"https://homesapp.co.kr")
+        }
+
+        @android.webkit.JavascriptInterface
+        fun memberUpload(){
+            Toast.makeText(this@MainActivity,"memberUpload ", Toast.LENGTH_SHORT).show()
+            pickImageFromGallery(REQUEST_PICK_MEMBER_CODE)
+        }
+
+        @android.webkit.JavascriptInterface
+        fun inquiryUpload(){
+            Toast.makeText(this@MainActivity,"inquiryUpload ", Toast.LENGTH_SHORT).show()
+            pickMultiImageFromGallery(REQUEST_PICK_INQUERY_CODE)
         }
     }
 
