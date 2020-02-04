@@ -19,6 +19,7 @@ import com.bconline.homesapp.sharedSNS.LineLinkProvider
 import kotlinx.android.synthetic.main.activity_main.*
 import android.webkit.WebSettings
 import android.net.Uri
+import android.os.Handler
 import android.os.Message
 import android.provider.MediaStore
 import android.webkit.WebView
@@ -61,7 +62,7 @@ class MainActivity : AppCompatActivity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         if (resultCode == Activity.RESULT_OK && requestCode == REQUEST_PICK_MEMBER_CODE) {
             if( grobalMemberId == null){
-                Toast.makeText(this,"멤버정보가 없네요 잠시만 기다려주세요.", Toast.LENGTH_LONG).show()
+                Toast.makeText(this,"잠시후 다시 시도해주세요.(member miss)", Toast.LENGTH_LONG).show()
             }else {
                 uploadService!!.uploadMemberPhoto(data!!.data, grobalMemberId!!)
             }
@@ -129,7 +130,7 @@ class MainActivity : AppCompatActivity() {
     private fun initWebview(){
         webview.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
-                val url : String  = (if (request != null) request.getUrl() else null).toString()
+                val url:String = (if (request != null) request.getUrl() else null).toString()
                 if("sms".equals(url.substring(0,3))){
                     val intent = Intent(Intent.ACTION_SENDTO, Uri.parse(url))
                     startActivity(intent)
@@ -142,6 +143,15 @@ class MainActivity : AppCompatActivity() {
                 Log.d("MainActivity","shouldOverrideUrlLoading " + url)
                 view?.loadUrl(url)
                 return true
+            }
+
+            override fun onReceivedError(
+                view: WebView?,
+                request: WebResourceRequest?,
+                error: WebResourceError?
+            ) {
+                webview.loadUrl("file:///android_asset/error.html")
+                super.onReceivedError(view, request, error)
             }
         }
         webview.webChromeClient = object : WebChromeClient(){
@@ -185,6 +195,7 @@ class MainActivity : AppCompatActivity() {
                 isUserGesture: Boolean,
                 resultMsg: Message?
             ): Boolean {
+                Toast.makeText(this@MainActivity,"잠시후 다시 시도해주세요.(member miss)", Toast.LENGTH_LONG).show()
                 val newWebView = WebView(this@MainActivity)
                 val settings = newWebView.settings
                 settings.javaScriptEnabled=true
@@ -228,6 +239,10 @@ class MainActivity : AppCompatActivity() {
         webview.loadUrl(url)
     }
 
+    private fun reload(){
+        webview.goBack()
+    }
+
     private inner class JavascriptInterface{
 
         @android.webkit.JavascriptInterface
@@ -261,6 +276,15 @@ class MainActivity : AppCompatActivity() {
         @android.webkit.JavascriptInterface
         fun inquiryUpload(){
             pickImageFromGallery(REQUEST_PICK_INQUERY_CODE)
+        }
+
+        @android.webkit.JavascriptInterface
+        fun onReLoad(){
+            webview.post(object: Runnable{
+                override fun run() {
+                    reload()
+                }
+            })
         }
     }
 

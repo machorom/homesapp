@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, target-densitydpi=medium-dpi">
+	<title>홈즈</title>
+	<style>
+		* {
+			margin: 0;
+			padding: 0;
+		}
+
+		#error-page {
+			width: 320px;
+			margin: 100px auto;
+			color: #222;
+			font-family: Noto Sans KR, Noto Sans CJK KR, Helvetica, Apple SD Gothic Neo, Malgun Gothic, Dotum, Arial, sans-serif;
+			font-size: 14px;
+			text-align: center;
+		}
+
+		#error-page .ico-error01 img {
+			height: 120px;
+		}
+		
+		#error-page dt {
+			margin-top: 29px;
+			font-weight: 700;
+			font-size: 20px;
+		}
+
+		#error-page dd {
+			margin-top: 9px;
+			color: #444;
+			line-height: 1.75;
+		}
+
+		.btn-area {
+			margin-top: 36px;
+		}
+
+		.btn-area .btn {
+			height: 40px;
+			padding: 11px 20px 10px;
+			border: 0;
+			border-radius: 5px;
+			color: #fff;
+			font-size: 14px;
+			text-align: center;
+		}
+
+		.btn-area .btn-style01 {
+			background-color: #fa1d76;
+		}
+	</style>
+</head>
+
+<script>
+function reloadToNative(){
+   window.HomesAppMobile.onReLoad();
+}
+</script>
+
+
+<body>
+	<div id="error-page">
+		<div class="ico ico-error01">
+			<img src="ico-error1.png" alt="">
+		</div>
+		<dl>
+			<dt>네트워크 연결 실패</dt>
+			<dd>
+				네트워크 연결에 실패하였습니다.<br>
+				확인 후 다시 시도해주세요.
+			</dd>
+		</dl>
+		<div class="btn-area">
+			<button type="button" class="btn btn-style01" onclick="reloadToNative();">새로고침</button>
+		</div>
+	</div>
+</body>
+
+</html>
