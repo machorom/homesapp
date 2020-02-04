@@ -9,7 +9,7 @@ import retrofit2.http.*
 interface UploadApi {
     @Multipart
     @POST("member/app_upload")
-    fun memberUpload(@Part file: MultipartBody.Part): Call<ResponseBody>
+    fun memberUpload(@Part file: MultipartBody.Part, @Part("member_id") requestBody:RequestBody): Call<ResponseBody>
 
     @Multipart
     @POST("inquiry/app_upload")

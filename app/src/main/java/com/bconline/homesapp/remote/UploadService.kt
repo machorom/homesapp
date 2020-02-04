@@ -19,15 +19,16 @@ import java.io.File
 
 class UploadService(val webview:WebView, val context: Context){
 
-    fun uploadMemberPhoto(contentURI: Uri?){
+    fun uploadMemberPhoto(contentURI: Uri?, memberId:String){
         val retrofit: Retrofit? = RetrofitClient.get(context)
         val uploadApi:UploadApi = retrofit!!.create(UploadApi::class.java)
-        val filepath = getRealPath(contentURI)
+        val filepath:String? = getRealPath(contentURI)
         val file = File(filepath)
         Log.d("MainActivity","uploadMemberPhoto parameter filepath="+filepath+",filename="+file.name)
         val requestBody: RequestBody = RequestBody.create(MediaType.parse("image/*"),file)
         val part: MultipartBody.Part = MultipartBody.Part.createFormData("photo",file.name,requestBody)
-        val call = uploadApi.memberUpload(part)
+        val memberParam = RequestBody.create(MediaType.parse("text/plain"), memberId)
+        val call = uploadApi.memberUpload(part, memberParam)
         call.enqueue(object : Callback<ResponseBody> {
             override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
                 Log.i("UploadService","memberUpload  error image" + t)
@@ -43,7 +44,7 @@ class UploadService(val webview:WebView, val context: Context){
                             + ", raw=" + response.raw()
                             + ", body=" + body
                 )
-                val url:String = "javascript:memberUploadComplete('"+body+"')"
+                val url:String = "javascript:memberUploadComplete('$body')"
                 webview.loadUrl(url)
                 Log.d("UploadService","call : " + url)
             }
@@ -56,6 +57,10 @@ class UploadService(val webview:WebView, val context: Context){
         val uploadApi:UploadApi = retrofit!!.create(UploadApi::class.java)
 
         val filepath = getRealPath(contentURI)
+        if(filepath == null){
+            Toast.makeText(context,"선택된 파일을 가져오지 못했습니다.", Toast.LENGTH_LONG).show()
+            return
+        }
         val file = File(filepath)
         Log.d("UploadService","uploadInqueryPhoto params filepath="+filepath+",filename="+file.name)
         val requestBody: RequestBody = RequestBody.create(MediaType.parse("image/*"),file)

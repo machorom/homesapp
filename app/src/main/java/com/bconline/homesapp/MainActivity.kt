@@ -105,7 +105,12 @@ class MainActivity : AppCompatActivity() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         if (resultCode == Activity.RESULT_OK && requestCode == REQUEST_PICK_MEMBER_CODE) {
-            uploadService!!.uploadMemberPhoto(data!!.data)
+            if( grobalMemberId == null){
+                Toast.makeText(this,"멤버정보가 없네요 잠시만 기다려주세요.", Toast.LENGTH_LONG).show()
+            }else {
+                uploadService!!.uploadMemberPhoto(data!!.data, grobalMemberId!!)
+            }
+
         } else if (resultCode == Activity.RESULT_OK && requestCode == REQUEST_PICK_INQUERY_CODE){
             uploadService!!.uploadInqueryPhoto(data!!.data)
         }
@@ -289,20 +294,17 @@ class MainActivity : AppCompatActivity() {
 
         @android.webkit.JavascriptInterface
         fun shareLine(url: String){
-            Toast.makeText(this@MainActivity,"shareLine " + url, Toast.LENGTH_SHORT).show()
             LineLinkProvider.sendLink(this@MainActivity,"https://homesapp.co.kr")
         }
 
         @android.webkit.JavascriptInterface
         fun memberUpload(memberId:String){
             grobalMemberId = memberId
-            Toast.makeText(this@MainActivity,"memberUpload memberId="+memberId, Toast.LENGTH_SHORT).show()
             pickImageFromGallery(REQUEST_PICK_MEMBER_CODE)
         }
 
         @android.webkit.JavascriptInterface
         fun inquiryUpload(){
-            Toast.makeText(this@MainActivity,"inquiryUpload ", Toast.LENGTH_SHORT).show()
             pickImageFromGallery(REQUEST_PICK_INQUERY_CODE)
         }
     }
