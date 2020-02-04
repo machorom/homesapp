@@ -2,13 +2,8 @@ package com.bconline.homesapp
 
 import android.app.Activity
 import android.app.Dialog
-import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.database.Cursor
-import android.location.Location
-import android.location.LocationListener
-import android.location.LocationManager
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -25,28 +20,15 @@ import kotlinx.android.synthetic.main.activity_main.*
 import android.webkit.WebSettings
 import android.net.Uri
 import android.os.Message
-import android.provider.DocumentsContract
 import android.provider.MediaStore
 import android.webkit.WebView
 import android.webkit.WebChromeClient
-import androidx.core.net.toFile
-import com.bconline.homesapp.remote.RetroCallback
-import com.bconline.homesapp.remote.UploadApi
-import com.bconline.homesapp.remote.RetrofitClient
-import okhttp3.MediaType
-import okhttp3.MultipartBody
-import okhttp3.RequestBody
-import okhttp3.ResponseBody
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
-import retrofit2.Retrofit
-import java.io.File
+import com.bconline.homesapp.location.LocationService
+import com.bconline.homesapp.remote.UploadService
 
 
 class MainActivity : AppCompatActivity() {
 
-    private var locationManager : LocationManager? = null
     private val MY_PERMISSIONS_REQUEST_ACCESS_COARSE_LOCATION: Int = 100
     private val MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION: Int = 101
     private val MY_PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE: Int = 102
@@ -54,15 +36,20 @@ class MainActivity : AppCompatActivity() {
     private val REQUEST_PICK_MEMBER_CODE: Int = 1000
     private val REQUEST_PICK_INQUERY_CODE: Int = 1001
 
+    private var uploadService:UploadService? = null
+    private var locationService:LocationService? = null
+
+    //webview bridge로 받을 member정보
+    private var grobalMemberId:String? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         initWebview()
+        uploadService = UploadService(webview, this)
+        locationService = LocationService(this)
         locationPermissionCheck()
     }
-
-    private var lat: String? = null
-    private var lng: String? = null
 
     private fun locationPermissionCheck(){
         if( ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED){
@@ -90,7 +77,7 @@ class MainActivity : AppCompatActivity() {
                     MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION)
             }
         } else {
-            initLocation()
+            locationService!!.initLocation()
         }
     }
 
@@ -118,83 +105,12 @@ class MainActivity : AppCompatActivity() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         if (resultCode == Activity.RESULT_OK && requestCode == REQUEST_PICK_MEMBER_CODE) {
-            Log.d("MainActivity", "data path=" + data?.data)
-            val contentURI = data!!.data
-            uploadMemberPhoto(contentURI)
+            uploadService!!.uploadMemberPhoto(data!!.data)
         } else if (resultCode == Activity.RESULT_OK && requestCode == REQUEST_PICK_INQUERY_CODE){
-            val contentURI = data!!.data
-            uploadInqueryPhoto(contentURI)
+            uploadService!!.uploadInqueryPhoto(data!!.data)
         }
         super.onActivityResult(requestCode, resultCode, data)
     }
-
-    private fun getRealPath(contentURI: Uri?):String?{
-        val projection = arrayOf(MediaStore.Images.Media.DATA)
-        if(contentURI != null) {
-            val cursor: Cursor? = contentResolver.query(contentURI, projection, null, null, null)
-            try {
-                val columeIndex = cursor!!.getColumnIndexOrThrow(MediaStore.Images.Media.DATA)
-                if (cursor.moveToFirst()) {
-                    return cursor.getString(columeIndex)
-                }
-            } finally {
-                cursor!!.close()
-            }
-        }
-        return null
-    }
-
-    private fun uploadMemberPhoto(contentURI: Uri?){
-        val retrofit: Retrofit? = RetrofitClient.get(this)
-        val uploadApi:UploadApi = retrofit!!.create(UploadApi::class.java)
-
-        val filepath = getRealPath(contentURI)
-        val file = File(filepath)
-        Log.d("MainActivity","uploadMember filepath="+filepath+",filename="+file.name)
-        val requestBody: RequestBody = RequestBody.create(MediaType.parse("image/*"),file)
-        val part: MultipartBody.Part = MultipartBody.Part.createFormData("photo",file.name,requestBody)
-        val call = uploadApi.memberUpload(part)
-        call.enqueue(object : Callback<ResponseBody> {
-            override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
-                Log.i("MainActivity","memberUpload  error image" + t)
-            }
-            override fun onResponse(call: Call<ResponseBody>, response: Response<ResponseBody>) {
-                Log.i(
-                    "MainActivity",
-                    "memberUpload code=" + response.code()
-                            + ", errorBody=" + response.errorBody()
-                            + ", message=" + response.message()
-                            + ", raw=" + response.raw()
-                            + ", body=" + response.body()!!.string()
-                )
-                webView.loadUrl("javascript:memberUploadComplete("+response.body()!!.string()+")")
-            }
-
-        })
-    }
-
-    private fun uploadInqueryPhoto(contentURI: Uri?){
-        val retrofit: Retrofit? = RetrofitClient.get(this)
-        val uploadApi:UploadApi = retrofit!!.create(UploadApi::class.java)
-
-        val filepath = getRealPath(contentURI)
-        val file = File(filepath)
-        Log.d("MainActivity","filepath="+filepath+",filename="+file.name)
-        val requestBody: RequestBody = RequestBody.create(MediaType.parse("image/*"),file)
-        val part: MultipartBody.Part = MultipartBody.Part.createFormData("photo[]",file.name, requestBody)
-        val call = uploadApi.inqueryUpload(part)
-        call.enqueue(object : Callback<ResponseBody> {
-            override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
-                Log.i("MainActivity"," error image" + t)
-            }
-
-            override fun onResponse(call: Call<ResponseBody>, response: Response<ResponseBody>) {
-                Log.i("MainActivity","response raw=" + response.raw()+",body=" + response.body()!!.string())
-            }
-
-        })
-    }
-
 
     private fun pickImageFromGallery(reqeustCode:Int){
         val intent = Intent(Intent.ACTION_PICK)
@@ -209,33 +125,12 @@ class MainActivity : AppCompatActivity() {
         startActivityForResult(Intent.createChooser(intent,"이미지선택"),reqeustCode)
     }
 
-    private fun initLocation(){
-        locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager?
-        try {
-            locationManager?.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0L, 0f, locationListener)
-        }catch(ex: SecurityException){
-            Log.d("MainActivity","security exception" + ex)
-        }
-    }
-
-    private val locationListener: LocationListener = object : LocationListener {
-        override fun onLocationChanged(location: Location) {
-            lat = location.latitude.toString()
-            lng = location.longitude.toString()
-            Log.d("MainActivity","gps=" + location.longitude + ":" + location.latitude)
-        }
-        override fun onStatusChanged(provider: String, status: Int, extras: Bundle) {}
-        override fun onProviderEnabled(provider: String) {}
-        override fun onProviderDisabled(provider: String) {}
-    }
-
     override fun onBackPressed() {
         Log.d("MainActivity","onBackPressed canGoBack=" + webview.canGoBack() + ", url="+webview.url)
         if( isLastedPage() ){
             showExitDialog()
         } else {
             webview.goBack()
-            //super.onBackPressed()
         }
     }
 
@@ -378,8 +273,7 @@ class MainActivity : AppCompatActivity() {
         @android.webkit.JavascriptInterface
         fun getMyPosition(): String{
             Log.d("JavascriptInterface", "getMyPosition ")
-            var result: String = String.format("{\"lat\":%s,\"lng\":%s}",lat, lng)
-            return result
+            return locationService!!.getLocationString()
         }
 
         @android.webkit.JavascriptInterface
@@ -400,15 +294,16 @@ class MainActivity : AppCompatActivity() {
         }
 
         @android.webkit.JavascriptInterface
-        fun memberUpload(){
-            Toast.makeText(this@MainActivity,"memberUpload ", Toast.LENGTH_SHORT).show()
+        fun memberUpload(memberId:String){
+            grobalMemberId = memberId
+            Toast.makeText(this@MainActivity,"memberUpload memberId="+memberId, Toast.LENGTH_SHORT).show()
             pickImageFromGallery(REQUEST_PICK_MEMBER_CODE)
         }
 
         @android.webkit.JavascriptInterface
         fun inquiryUpload(){
             Toast.makeText(this@MainActivity,"inquiryUpload ", Toast.LENGTH_SHORT).show()
-            pickMultiImageFromGallery(REQUEST_PICK_INQUERY_CODE)
+            pickImageFromGallery(REQUEST_PICK_INQUERY_CODE)
         }
     }
 
