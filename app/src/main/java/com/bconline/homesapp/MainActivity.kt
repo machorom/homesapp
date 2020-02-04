@@ -27,6 +27,7 @@ import android.webkit.WebChromeClient
 import com.bconline.homesapp.service.LocationService
 import com.bconline.homesapp.service.PermissionService
 import com.bconline.homesapp.service.UploadService
+import com.bconline.homesapp.sharedSNS.TwitterProvider
 
 
 class MainActivity : AppCompatActivity() {
@@ -264,7 +265,8 @@ class MainActivity : AppCompatActivity() {
 
         @android.webkit.JavascriptInterface
         fun shareLine(url: String){
-            LineLinkProvider.sendLink(this@MainActivity,"https://homesapp.co.kr")
+            //LineLinkProvider.sendLink(this@MainActivity,"https://homesapp.co.kr")
+            TwitterProvider.share(this@MainActivity,"test", url)
         }
 
         @android.webkit.JavascriptInterface
