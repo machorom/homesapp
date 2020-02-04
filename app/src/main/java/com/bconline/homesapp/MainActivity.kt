@@ -23,20 +23,17 @@ import android.os.Message
 import android.provider.MediaStore
 import android.webkit.WebView
 import android.webkit.WebChromeClient
-import com.bconline.homesapp.location.LocationService
-import com.bconline.homesapp.remote.UploadService
+import com.bconline.homesapp.service.LocationService
+import com.bconline.homesapp.service.PermissionService
+import com.bconline.homesapp.service.UploadService
 
 
 class MainActivity : AppCompatActivity() {
 
-    private val MY_PERMISSIONS_REQUEST_ACCESS_COARSE_LOCATION: Int = 100
-    private val MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION: Int = 101
-    private val MY_PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE: Int = 102
-
     private val REQUEST_PICK_MEMBER_CODE: Int = 1000
     private val REQUEST_PICK_INQUERY_CODE: Int = 1001
 
-    private var uploadService:UploadService? = null
+    private var uploadService: UploadService? = null
     private var locationService:LocationService? = null
 
     //webview bridge로 받을 member정보
@@ -48,57 +45,15 @@ class MainActivity : AppCompatActivity() {
         initWebview()
         uploadService = UploadService(webview, this)
         locationService = LocationService(this)
-        locationPermissionCheck()
-    }
-
-    private fun locationPermissionCheck(){
-        if( ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED){
-            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
-                    android.Manifest.permission.ACCESS_COARSE_LOCATION)) {
-            } else {
-                ActivityCompat.requestPermissions(this,
-                    arrayOf(android. Manifest.permission.ACCESS_COARSE_LOCATION),
-                    MY_PERMISSIONS_REQUEST_ACCESS_COARSE_LOCATION)
-            }
-        }else if( ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED){
-            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
-                    android.Manifest.permission.ACCESS_FINE_LOCATION)) {
-            } else {
-                ActivityCompat.requestPermissions(this,
-                    arrayOf(android. Manifest.permission.ACCESS_FINE_LOCATION),
-                    MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION)
-            }
-        }else if( ContextCompat.checkSelfPermission(this, android.Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED){
-            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
-                    android.Manifest.permission.READ_EXTERNAL_STORAGE)) {
-            } else {
-                ActivityCompat.requestPermissions(this,
-                    arrayOf(android. Manifest.permission.READ_EXTERNAL_STORAGE),
-                    MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION)
-            }
-        } else {
+        if( PermissionService.locationPermissionCheck(this) ){
             locationService!!.initLocation()
         }
     }
 
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-        when(requestCode){
-            MY_PERMISSIONS_REQUEST_ACCESS_COARSE_LOCATION -> {
-                Log.d("MainActivity","onRequestPermissionsResult MY_PERMISSIONS_REQUEST_ACCESS_COARSE_LOCATION")
-                locationPermissionCheck()
-            }
-            MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION -> {
-                Log.d("MainActivity","onRequestPermissionsResult MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION")
-                locationPermissionCheck()
-            }
-            MY_PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE ->{
-                Log.d("MainActivity","onRequestPermissionsResult MY_PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE")
-                locationPermissionCheck()
-            }
-            else -> {
-                Log.d("MainActivity","onRequestPermissionsResult else")
-            }
+        if ( PermissionService.onRequestPermissionsResult(this, requestCode, permissions, grantResults) ){
+            locationService!!.initLocation()
         }
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
     }

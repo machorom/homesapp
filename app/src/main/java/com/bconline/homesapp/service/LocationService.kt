@@ -1,4 +1,4 @@
-package com.bconline.homesapp.location
+package com.bconline.homesapp.service
 
 import android.content.Context
 import android.location.Location
