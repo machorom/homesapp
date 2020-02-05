@@ -3,7 +3,6 @@ package com.bconline.homesapp
 import android.app.Activity
 import android.app.Dialog
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -12,14 +11,9 @@ import android.view.ContextThemeWrapper
 import android.webkit.*
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
-import com.bconline.homesapp.sharedSNS.KakaolinkProvider
-import com.bconline.homesapp.sharedSNS.LineLinkProvider
 import kotlinx.android.synthetic.main.activity_main.*
 import android.webkit.WebSettings
 import android.net.Uri
-import android.os.Handler
 import android.os.Message
 import android.provider.MediaStore
 import android.webkit.WebView
@@ -27,7 +21,7 @@ import android.webkit.WebChromeClient
 import com.bconline.homesapp.service.LocationService
 import com.bconline.homesapp.service.PermissionService
 import com.bconline.homesapp.service.UploadService
-import com.bconline.homesapp.sharedSNS.TwitterProvider
+import com.bconline.homesapp.sharedSNS.*
 
 
 class MainActivity : AppCompatActivity() {
@@ -265,8 +259,22 @@ class MainActivity : AppCompatActivity() {
 
         @android.webkit.JavascriptInterface
         fun shareLine(url: String){
-            //LineLinkProvider.sendLink(this@MainActivity,"https://homesapp.co.kr")
-            TwitterProvider.share(this@MainActivity,"test", url)
+            LineLinkProvider.share(this@MainActivity,url)
+        }
+
+        @android.webkit.JavascriptInterface
+        fun shareTwitter(url: String, text:String){
+            TwitterProvider.share(this@MainActivity, url,text)
+        }
+
+        @android.webkit.JavascriptInterface
+        fun shareKakaoStory(url: String, text:String){
+            KakaoStoryProvider.share(this@MainActivity,url,text)
+        }
+
+        @android.webkit.JavascriptInterface
+        fun shareFacebook(url: String){
+            FacebookProvider.share(this@MainActivity, url)
         }
 
         @android.webkit.JavascriptInterface

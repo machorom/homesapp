@@ -8,9 +8,9 @@ import androidx.core.content.ContextCompat.startActivity
 
 
 object TwitterProvider {
-    fun share(context:Context, message:String, url:String){
+    fun share(context:Context, url:String, text:String){
         val tweetUrl =
-            "https://twitter.com/intent/tweet?text=$message&url=$url"
+            "https://twitter.com/intent/tweet?url=$url&text=$text"
         val uri = Uri.parse(tweetUrl)
         val intent = Intent(Intent.ACTION_VIEW, uri)
         context.startActivity(intent)
