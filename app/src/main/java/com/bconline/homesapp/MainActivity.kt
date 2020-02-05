@@ -1,7 +1,6 @@
 package com.bconline.homesapp
 
 import android.app.Activity
-import android.app.Dialog
 import android.content.Intent
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
@@ -14,10 +13,10 @@ import androidx.appcompat.app.AlertDialog
 import kotlinx.android.synthetic.main.activity_main.*
 import android.webkit.WebSettings
 import android.net.Uri
-import android.os.Message
 import android.provider.MediaStore
 import android.webkit.WebView
 import android.webkit.WebChromeClient
+import com.bconline.homesapp.service.ImageService
 import com.bconline.homesapp.service.LocationService
 import com.bconline.homesapp.service.PermissionService
 import com.bconline.homesapp.service.UploadService
@@ -32,8 +31,6 @@ class MainActivity : AppCompatActivity() {
     private var uploadService: UploadService? = null
     private var locationService:LocationService? = null
 
-    //webview bridge로 받을 member정보
-    private var grobalMemberId:String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -56,29 +53,17 @@ class MainActivity : AppCompatActivity() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         if (resultCode == Activity.RESULT_OK && requestCode == REQUEST_PICK_MEMBER_CODE) {
-            if( grobalMemberId == null){
+            val pref = this@MainActivity.getPreferences(0)
+            if( pref.getString("MEMBER_ID",null) == null){
                 Toast.makeText(this,"잠시후 다시 시도해주세요.(member miss)", Toast.LENGTH_LONG).show()
             }else {
-                uploadService!!.uploadMemberPhoto(data!!.data, grobalMemberId!!)
+                uploadService!!.uploadMemberPhoto(data!!.data, pref.getString("MEMBER_ID",null)!!)
             }
 
         } else if (resultCode == Activity.RESULT_OK && requestCode == REQUEST_PICK_INQUERY_CODE){
             uploadService!!.uploadInqueryPhoto(data!!.data)
         }
         super.onActivityResult(requestCode, resultCode, data)
-    }
-
-    private fun pickImageFromGallery(reqeustCode:Int){
-        val intent = Intent(Intent.ACTION_PICK)
-        intent.type = "image/*"
-        startActivityForResult(intent,reqeustCode)
-    }
-
-    private fun pickMultiImageFromGallery(reqeustCode:Int){
-        val intent = Intent(Intent.ACTION_GET_CONTENT, MediaStore.Audio.Media.EXTERNAL_CONTENT_URI)
-        intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE,true)
-        intent.type = "image/*"
-        startActivityForResult(Intent.createChooser(intent,"이미지선택"),reqeustCode)
     }
 
     override fun onBackPressed() {
@@ -183,32 +168,6 @@ class MainActivity : AppCompatActivity() {
                 builder.show()
                 return true
             }
-
-            override fun onCreateWindow(
-                view: WebView?,
-                isDialog: Boolean,
-                isUserGesture: Boolean,
-                resultMsg: Message?
-            ): Boolean {
-                Toast.makeText(this@MainActivity,"잠시후 다시 시도해주세요.(member miss)", Toast.LENGTH_LONG).show()
-                val newWebView = WebView(this@MainActivity)
-                val settings = newWebView.settings
-                settings.javaScriptEnabled=true
-                val dialog = Dialog(this@MainActivity)
-                dialog.setContentView(newWebView)
-                dialog.show()
-                newWebView.webChromeClient = object: WebChromeClient(){
-                    override fun onCloseWindow(window: WebView?) {
-                        Log.i("WebSettings", "new webview onCloseWindow")
-                        dialog.dismiss()
-                    }
-                }
-                val wvt :WebView.WebViewTransport = resultMsg!!.obj as WebView.WebViewTransport
-                wvt.webView = newWebView
-                Log.i("WebSettings", "new webview attach")
-                resultMsg.sendToTarget()
-                return true
-            }
         }
         val setting = webview.settings
         setting.javaScriptEnabled = true
@@ -279,13 +238,24 @@ class MainActivity : AppCompatActivity() {
 
         @android.webkit.JavascriptInterface
         fun memberUpload(memberId:String){
-            grobalMemberId = memberId
-            pickImageFromGallery(REQUEST_PICK_MEMBER_CODE)
+            val pref = this@MainActivity.getPreferences(0)
+            val editor = pref.edit()
+            editor.putString("MEMBER_ID",memberId).apply()
+            ImageService.pickImageFromGallery(this@MainActivity, REQUEST_PICK_MEMBER_CODE)
         }
 
         @android.webkit.JavascriptInterface
         fun inquiryUpload(){
-            pickImageFromGallery(REQUEST_PICK_INQUERY_CODE)
+            ImageService.pickImageFromGallery(this@MainActivity,REQUEST_PICK_INQUERY_CODE)
+        }
+
+        @android.webkit.JavascriptInterface
+        fun openPopup(url:String){
+            Toast.makeText(this@MainActivity,"openPopup url=$url", Toast.LENGTH_SHORT).show()
+            Log.d("JavascriptInterface", "openPopup url=$url")
+            val intent = Intent(this@MainActivity,PopupActivity::class.java)
+            intent.putExtra("URL",url)
+            startActivity(intent)
         }
 
         @android.webkit.JavascriptInterface
