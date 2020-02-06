@@ -11,6 +11,7 @@ import android.view.ContextThemeWrapper
 import android.webkit.*
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
+import com.bconline.homesapp.Util.WebViewUtil
 import com.bconline.homesapp.service.ImageService
 import com.bconline.homesapp.service.UploadService
 import com.bconline.homesapp.sharedSNS.*
@@ -32,7 +33,7 @@ class PopupActivity : AppCompatActivity() {
 
     override fun onBackPressed() {
         Log.d("PopupActivity","onBackPressed canGoBack=" + webview.canGoBack() + ", url="+webview.url)
-        if( isLastedPage() ){
+        if( WebViewUtil.isLastedPage(webview)){
             finish()
         } else {
             webview.goBack()
@@ -54,26 +55,6 @@ class PopupActivity : AppCompatActivity() {
         super.onActivityResult(requestCode, resultCode, data)
     }
 
-    private fun isLastedPage():Boolean{
-        if( webview.getUrl().endsWith("/login")
-            || webview.getUrl().endsWith("/join")
-            || webview.getUrl().endsWith("/map")
-            || webview.getUrl().endsWith("/contents")
-            || webview.getUrl().endsWith("/mlike")
-            || webview.getUrl().endsWith("/recent")
-            || webview.getUrl().endsWith("/clike")
-            || webview.getUrl().endsWith("/mypage")
-            || webview.getUrl().endsWith("/notice")
-            || webview.getUrl().endsWith("/event")
-            || webview.getUrl().endsWith("/faq")
-            || webview.getUrl().endsWith("/inquiry")
-            || webview.getUrl().endsWith("/member/edit")
-            || webview.getUrl().endsWith("/member/setting")
-            || !webview.canGoBack() ){
-            return true
-        }
-        return false
-    }
 
     private fun initWebview(){
         webview.webViewClient = object : WebViewClient() {
@@ -138,6 +119,7 @@ class PopupActivity : AppCompatActivity() {
             }
         }
         val setting = webview.settings
+        setting.userAgentString = WebViewUtil.userAgent(this)
         setting.javaScriptEnabled = true
         setting.javaScriptCanOpenWindowsAutomatically = true
         if(Build.VERSION.SDK_INT > 21) {
@@ -212,7 +194,6 @@ class PopupActivity : AppCompatActivity() {
 
         @android.webkit.JavascriptInterface
         fun openPopup(url:String){
-            Toast.makeText(this@PopupActivity,"openPopup url=$url", Toast.LENGTH_SHORT).show()
             Log.d("JavascriptInterface", "openPopup url=$url")
             val intent = Intent(this@PopupActivity,PopupActivity::class.java)
             intent.putExtra("URL",url)

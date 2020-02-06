@@ -16,6 +16,7 @@ import android.net.Uri
 import android.provider.MediaStore
 import android.webkit.WebView
 import android.webkit.WebChromeClient
+import com.bconline.homesapp.Util.WebViewUtil
 import com.bconline.homesapp.service.ImageService
 import com.bconline.homesapp.service.LocationService
 import com.bconline.homesapp.service.PermissionService
@@ -24,13 +25,13 @@ import com.bconline.homesapp.sharedSNS.*
 
 
 class MainActivity : AppCompatActivity() {
-
-    private val REQUEST_PICK_MEMBER_CODE: Int = 1000
-    private val REQUEST_PICK_INQUERY_CODE: Int = 1001
+    companion object{
+        private const val REQUEST_PICK_MEMBER_CODE: Int = 1000
+        private const val REQUEST_PICK_INQUERY_CODE: Int = 1001
+    }
 
     private var uploadService: UploadService? = null
     private var locationService:LocationService? = null
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -68,32 +69,11 @@ class MainActivity : AppCompatActivity() {
 
     override fun onBackPressed() {
         Log.d("MainActivity","onBackPressed canGoBack=" + webview.canGoBack() + ", url="+webview.url)
-        if( isLastedPage() ){
+        if( WebViewUtil.isLastedPage(webview) ){
             showExitDialog()
         } else {
             webview.goBack()
         }
-    }
-
-    private fun isLastedPage():Boolean{
-        if( webview.getUrl().endsWith("/login")
-            || webview.getUrl().endsWith("/join")
-            || webview.getUrl().endsWith("/map")
-            || webview.getUrl().endsWith("/contents")
-            || webview.getUrl().endsWith("/mlike")
-            || webview.getUrl().endsWith("/recent")
-            || webview.getUrl().endsWith("/clike")
-            || webview.getUrl().endsWith("/mypage")
-            || webview.getUrl().endsWith("/notice")
-            || webview.getUrl().endsWith("/event")
-            || webview.getUrl().endsWith("/faq")
-            || webview.getUrl().endsWith("/inquiry")
-            || webview.getUrl().endsWith("/member/edit")
-            || webview.getUrl().endsWith("/member/setting")
-            || !webview.canGoBack() ){
-            return true
-        }
-        return false
     }
 
     private fun showExitDialog(){
@@ -170,6 +150,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
         val setting = webview.settings
+        setting.userAgentString = WebViewUtil.userAgent(this)
         setting.javaScriptEnabled = true
         setting.javaScriptCanOpenWindowsAutomatically = true
         if(Build.VERSION.SDK_INT > 21) {
@@ -187,17 +168,14 @@ class MainActivity : AppCompatActivity() {
             }
         }
         webview.addJavascriptInterface(JavascriptInterface(),"HomesAppMobile")
-
-        val url:String = "https://homesapp.co.kr?app=android&version="+applicationContext.packageManager.getPackageInfo(packageName,0).versionName
-        Log.d("MainActivity","loadUrl " + url)
-        webview.loadUrl(url)
+        webview.loadUrl(WebViewUtil.BASE_URL)
     }
 
     private fun reload(){
         webview.goBack()
     }
 
-    private inner class JavascriptInterface{
+    inner class JavascriptInterface{
 
         @android.webkit.JavascriptInterface
         fun getMyPosition(): String{
@@ -251,7 +229,6 @@ class MainActivity : AppCompatActivity() {
 
         @android.webkit.JavascriptInterface
         fun openPopup(url:String){
-            Toast.makeText(this@MainActivity,"openPopup url=$url", Toast.LENGTH_SHORT).show()
             Log.d("JavascriptInterface", "openPopup url=$url")
             val intent = Intent(this@MainActivity,PopupActivity::class.java)
             intent.putExtra("URL",url)
