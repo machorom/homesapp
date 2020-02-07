@@ -35,6 +35,7 @@ object WebViewUtil {
             || webview.getUrl().endsWith("/inquiry")
             || webview.getUrl().endsWith("/member/edit")
             || webview.getUrl().endsWith("/member/setting")
+            || webview.getUrl().endsWith("/")
             || !webview.canGoBack() ){
             return true
         }

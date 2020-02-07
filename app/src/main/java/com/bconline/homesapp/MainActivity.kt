@@ -168,7 +168,21 @@ class MainActivity : AppCompatActivity() {
             }
         }
         webview.addJavascriptInterface(JavascriptInterface(),"HomesAppMobile")
-        webview.loadUrl(WebViewUtil.BASE_URL)
+        loadUrl()
+    }
+
+    private fun loadUrl(){
+        Log.i("SNS","intent=${intent.data}")
+        if( intent.data != null && intent.data.toString().contains("//kakaolink")){
+            val kakaolinks = intent.data.toString().split('?')
+            if (kakaolinks != null && kakaolinks.size > 1) {
+                webview.loadUrl(intent.data.toString().split('?')[1])
+            } else{
+                webview.loadUrl(WebViewUtil.BASE_URL)
+            }
+        } else {
+            webview.loadUrl(WebViewUtil.BASE_URL)
+        }
     }
 
     private fun reload(){

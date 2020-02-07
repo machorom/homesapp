@@ -18,8 +18,10 @@ class LocationService(val context:Context) {
         try {
             locationManager?.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0L, 0f, locationListener)
             val location = locationManager?.getLastKnownLocation(LocationManager.GPS_PROVIDER)
-            lat = location!!.latitude.toString()
-            lat = location!!.longitude.toString()
+            if(location != null) {
+                lat = location.latitude.toString()
+                lat = location.longitude.toString()
+            }
         }catch(ex: SecurityException){
             Log.d("MainActivity","security exception" + ex)
         }

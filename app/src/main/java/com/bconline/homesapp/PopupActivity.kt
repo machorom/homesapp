@@ -84,6 +84,10 @@ class PopupActivity : AppCompatActivity() {
             }
         }
         webview.webChromeClient = object : WebChromeClient(){
+            override fun onCloseWindow(window: WebView?) {
+                this@PopupActivity.finish()
+                super.onCloseWindow(window)
+            }
             override fun onJsAlert(
                 view: WebView?,
                 url: String?,

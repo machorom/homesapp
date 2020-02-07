@@ -18,10 +18,13 @@ object KakaolinkProvider {
 
     // 공유하기 눌렀을 때 처리
     fun sendKakaoLink(context: Context, imageUrl: String, title:String, content: String, url: String){
-        Log.d("SNS","sendKakaoLink imageUrl=" + imageUrl+", title="+title+", content="+content)
+        Log.d("SNS","sendKakaoLink imageUrl=$imageUrl, title=$title, content=$content, url=$url" )
         val params : FeedTemplate = FeedTemplate.newBuilder(ContentObject.newBuilder(title,imageUrl,
-            LinkObject.newBuilder().setWebUrl("https://developers.kakao.com")
-                .setMobileWebUrl("https://developers.kakao.com").build()).setDescrption(content).build()).build()
+            LinkObject.newBuilder()
+                .setWebUrl(url)
+                .setMobileWebUrl(url)
+                .build())
+                .setDescrption(content).build()).build()
         KakaoLinkService.getInstance().sendDefault(context, params, object : ResponseCallback<KakaoLinkResponse>() {
             override fun onFailure(errorResult: ErrorResult) {
                 var msg:String = String.format("code=%s, message=%s", errorResult.errorCode, errorResult.errorMessage)
