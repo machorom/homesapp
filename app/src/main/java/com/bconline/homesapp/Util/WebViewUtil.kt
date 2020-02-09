@@ -19,12 +19,18 @@ object WebViewUtil {
         return "APP_ANDROID&"+ context.applicationContext.packageManager.getPackageInfo(context.packageName,0).versionName
     }
 
-
+    fun isMatchPattern(url:String, pattern:String):Boolean{
+        val regex = pattern.toRegex()
+        val matchResult : MatchResult? = regex.find(url)
+        if( matchResult == null )
+            return false
+        return true
+    }
     fun isLastedPage(webview:WebView):Boolean{
         if( webview.getUrl().endsWith("/login")
             || webview.getUrl().endsWith("/join")
             || webview.getUrl().endsWith("/map")
-            || webview.getUrl().endsWith("/contents")
+            || isMatchPattern(webview.getUrl().replace("$BASE_URL/contents/",""),"(^[0-9]*\$)")
             || webview.getUrl().endsWith("/mlike")
             || webview.getUrl().endsWith("/recent")
             || webview.getUrl().endsWith("/clike")
