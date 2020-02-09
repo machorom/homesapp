@@ -123,7 +123,7 @@ class PopupActivity : AppCompatActivity() {
             }
         }
         val setting = webview.settings
-        setting.userAgentString = WebViewUtil.userAgent(this)
+        setting.userAgentString = setting.userAgentString + " " + WebViewUtil.userAgent(this)
         setting.javaScriptEnabled = true
         setting.javaScriptCanOpenWindowsAutomatically = true
         if(Build.VERSION.SDK_INT > 21) {
@@ -140,10 +140,14 @@ class PopupActivity : AppCompatActivity() {
                 Log.e("WebSettings", "Error calling setMixedContentMode: " + ex.message, ex)
             }
         }
+        setting.loadWithOverviewMode = true
+        setting.builtInZoomControls = true
+        setting.useWideViewPort = true
+        setting.displayZoomControls = false
         webview.addJavascriptInterface(JavascriptInterface(),"HomesAppMobile")
         val url:String = intent.getStringExtra("URL")
         Log.d("MainActivity","loadUrl " + url)
-        webview.loadUrl(url)
+        webview.loadUrl(url,WebViewUtil.extraHeader(this))
     }
 
     private fun reload(){

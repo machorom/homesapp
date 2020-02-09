@@ -150,9 +150,9 @@ class MainActivity : AppCompatActivity() {
             }
         }
         val setting = webview.settings
-        setting.userAgentString = WebViewUtil.userAgent(this)
+        setting.userAgentString = setting.userAgentString + " " + WebViewUtil.userAgent(this)
         setting.javaScriptEnabled = true
-        setting.javaScriptCanOpenWindowsAutomatically = true
+        //setting.javaScriptCanOpenWindowsAutomatically = true
         if(Build.VERSION.SDK_INT > 21) {
             setting.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
         } else {
@@ -167,6 +167,12 @@ class MainActivity : AppCompatActivity() {
                 Log.e("WebSettings", "Error calling setMixedContentMode: " + ex.message, ex)
             }
         }
+        setting.loadWithOverviewMode = true
+        setting.builtInZoomControls = true
+        setting.useWideViewPort = true
+        setting.displayZoomControls = false
+        setting.setSupportZoom(true)
+
         webview.addJavascriptInterface(JavascriptInterface(),"HomesAppMobile")
         loadUrl()
     }

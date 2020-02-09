@@ -19,6 +19,12 @@ object WebViewUtil {
         return "APP_ANDROID&"+ context.applicationContext.packageManager.getPackageInfo(context.packageName,0).versionName
     }
 
+    fun extraHeader(context:Context):HashMap<String,String>{
+        val headers :HashMap<String,String> = HashMap()
+        headers.put("homseAgent",userAgent(context))
+        return headers
+    }
+
     fun isMatchPattern(url:String, pattern:String):Boolean{
         val regex = pattern.toRegex()
         val matchResult : MatchResult? = regex.find(url)
