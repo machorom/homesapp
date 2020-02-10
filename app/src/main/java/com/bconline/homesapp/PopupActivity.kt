@@ -11,6 +11,7 @@ import android.view.ContextThemeWrapper
 import android.webkit.*
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
+import com.bconline.homesapp.Util.IntentUtil
 import com.bconline.homesapp.Util.WebViewUtil
 import com.bconline.homesapp.service.ImageService
 import com.bconline.homesapp.service.UploadService
@@ -61,8 +62,7 @@ class PopupActivity : AppCompatActivity() {
             override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
                 val url:String = (if (request != null) request.getUrl() else null).toString()
                 if("sms".equals(url.substring(0,3))){
-                    val intent = Intent(Intent.ACTION_SENDTO, Uri.parse(url))
-                    startActivity(intent)
+                    IntentUtil.intentToSMS(this@PopupActivity,url)
                     return true
                 } else if("tel".equals(url.substring(0,3))){
                     val intent = Intent(Intent.ACTION_DIAL, Uri.parse(url))
