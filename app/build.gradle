@@ -7,7 +7,7 @@ apply plugin: 'kotlin-android-extensions'
 android {
     signingConfigs {
         debug {
-            storeFile file('D:\\code\\homesapp\\debugging_keystore.jks')
+            storeFile file('D:\\code\\demo\\homesapp\\debugging_keystore.jks')
             storePassword 'android'
             keyPassword 'android'
         }
@@ -27,6 +27,7 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+    sourceSets { main { assets.srcDirs = ['src/main/assets', 'src/main/assets/'] } }
 }
 
 dependencies {
